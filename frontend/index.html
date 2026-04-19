@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyAI — Your Intelligent Study Assistant</title>
+    <meta name="description" content="AI-powered study assistant. Upload PDFs, ask questions, generate quizzes, and simplify complex topics.">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Ambient background effects -->
+    <div class="ambient-bg">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-inner">
+                <!-- Logo -->
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fa-solid fa-brain"></i>
+                    </div>
+                    <h1>Study<span class="gradient-text">AI</span></h1>
+                </div>
+
+                <!-- Upload Section -->
+                <div class="upload-section" id="uploadSection">
+                    <div class="file-drop-area" id="dropArea">
+                        <div class="drop-icon">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                        </div>
+                        <p class="drop-text">Drag & Drop PDF</p>
+                        <span class="drop-divider">or</span>
+                        <label for="pdfUpload" class="upload-btn" id="uploadBtnLabel">
+                            <i class="fa-solid fa-folder-open"></i>
+                            Browse Files
+                        </label>
+                        <input type="file" id="pdfUpload" accept=".pdf" hidden>
+                    </div>
+
+                    <div id="uploadStatus" class="upload-status hidden">
+                        <div class="processing-animation">
+                            <div class="processing-ring"></div>
+                            <i class="fa-solid fa-file-pdf processing-icon"></i>
+                        </div>
+                        <p>Processing document...</p>
+                    </div>
+
+                    <div id="fileInfo" class="file-info hidden">
+                        <div class="file-badge">
+                            <i class="fa-solid fa-file-pdf"></i>
+                            <span id="fileName">document.pdf</span>
+                            <i class="fa-solid fa-circle-check file-check"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Source List -->
+                <div id="sourceListContainer" class="source-list-container hidden">
+                    <div class="section-label">
+                        <i class="fa-solid fa-database"></i>
+                        <span>Knowledge Sources</span>
+                    </div>
+                    <ul id="sourceList"></ul>
+                    <label for="pdfUploadAdd" class="add-source-btn">
+                        <i class="fa-solid fa-plus"></i>
+                        Add Document
+                    </label>
+                    <input type="file" id="pdfUploadAdd" accept=".pdf" hidden>
+                </div>
+
+                <!-- Study Tools -->
+                <div class="tools-section hidden" id="toolsSection">
+                    <div class="section-label">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Study Tools</span>
+                    </div>
+                    <div class="tools-grid">
+                        <button class="tool-btn active" data-mode="qa" id="tool-qa">
+                            <div class="tool-btn-icon"><i class="fa-solid fa-comments"></i></div>
+                            <span>Q&A</span>
+                        </button>
+                        <button class="tool-btn" data-mode="quiz" id="tool-quiz">
+                            <div class="tool-btn-icon"><i class="fa-solid fa-list-check"></i></div>
+                            <span>Quiz</span>
+                        </button>
+                        <button class="tool-btn" data-mode="simplify" id="tool-simplify">
+                            <div class="tool-btn-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                            <span>Simplify</span>
+                        </button>
+                        <button class="tool-btn" data-mode="agent" id="tool-agent">
+                            <div class="tool-btn-icon"><i class="fa-solid fa-robot"></i></div>
+                            <span>Agent</span>
+                        </button>
+                    </div>
+                    <div class="mode-description" id="modeDescription">
+                        Ask any question about the document.
+                    </div>
+                    <button class="audio-overview-btn" id="generateAudioBtn">
+                        <i class="fa-solid fa-headphones"></i>
+                        Audio Overview
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="chat-container">
+            <header class="chat-header">
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="header-info">
+                    <h2>Assistant</h2>
+                    <span id="currentModeBadge" class="mode-badge">Q&A</span>
+                </div>
+                <button class="notes-toggle" id="notesToggle">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+            </header>
+
+            <div class="chat-history" id="chatHistory">
+                <!-- Welcome message -->
+                <div class="message bot-message fade-in">
+                    <div class="avatar bot-avatar">
+                        <i class="fa-solid fa-sparkles"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-bubble">
+                            <p>Hello! I'm your AI study assistant. Upload a PDF to get started — I can answer questions, generate quizzes, simplify concepts, or handle complex tasks.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <form id="chatForm">
+                    <div class="input-wrapper">
+                        <textarea id="userInput" placeholder="Ask a question..." rows="1" disabled></textarea>
+                        <button type="submit" id="sendBtn" disabled>
+                            <i class="fa-solid fa-arrow-up"></i>
+                        </button>
+                    </div>
+                    <p class="input-hint">Press Enter to send, Shift+Enter for new line</p>
+                </form>
+            </div>
+        </main>
+
+        <!-- Notes Sidebar -->
+        <aside class="notes-sidebar" id="notesSidebar">
+            <header class="notes-header">
+                <div class="notes-title">
+                    <i class="fa-solid fa-bookmark"></i>
+                    <h3>Study Notes</h3>
+                </div>
+                <button id="clearNotesBtn" title="Clear all notes">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </header>
+            <div id="notesContent" class="notes-content">
+                <div class="empty-notes">
+                    <div class="empty-icon">
+                        <i class="fa-solid fa-note-sticky"></i>
+                    </div>
+                    <p>Your saved notes and summaries will appear here.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
