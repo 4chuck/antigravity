@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: antigravity-ai-assistant
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend.main:app -k uvicorn.workers.UvicornWorker
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: 3.10.0

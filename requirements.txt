@@ -7,3 +7,4 @@ google-generativeai
 python-multipart
 python-dotenv
 tiktoken
+gunicorn

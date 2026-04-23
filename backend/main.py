@@ -1,5 +1,6 @@
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import os
 import shutil
@@ -48,12 +49,17 @@ uploaded_docs = []
 UPLOAD_DIR = "./uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
+# --------------------------------------------
+# API Router
+# --------------------------------------------
+api_router = APIRouter()
+
 class QueryRequest(BaseModel):
     query: str
     mode: str = "qa"  # qa | quiz | simplify | agent
     options: dict = {}
 
-@app.post("/upload")
+@api_router.post("/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     logger.info(f"=== UPLOAD REQUEST: {file.filename} ===")
     
@@ -114,7 +120,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=f"Error processing file: {str(e)}")
 
-@app.post("/query")
+@api_router.post("/query")
 async def process_query(request: QueryRequest):
     query = request.query
     mode = request.mode
@@ -171,12 +177,12 @@ async def process_query(request: QueryRequest):
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/sources")
+@api_router.get("/sources")
 async def get_sources():
     logger.debug(f"Sources requested. Current docs: {uploaded_docs}")
     return {"files": uploaded_docs}
 
-@app.post("/generate-audio-overview")
+@api_router.post("/generate-audio-overview")
 async def generate_audio_overview():
     logger.info("=== AUDIO OVERVIEW REQUEST ===")
     try:
@@ -195,7 +201,7 @@ async def generate_audio_overview():
         script_raw = agent.generate_podcast_script(context)
         logger.debug(f"Raw script response: {script_raw[:300]}...")
         
-        # Clean JSON — FIXED: was using JS syntax .startsWith()
+        # Clean JSON
         json_str = script_raw.strip()
         if json_str.startswith("```json"):
             json_str = json_str.replace("```json", "").replace("```", "").strip()
@@ -217,6 +223,18 @@ async def generate_audio_overview():
         logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/health")
+@api_router.get("/health")
 def health_check():
     return {"status": "ok"}
+
+# --------------------------------------------
+# App Configuration
+# --------------------------------------------
+app.include_router(api_router, prefix="/api")
+
+# Serve the frontend
+frontend_path = os.path.abspath(os.path.join(os.getcwd(), "frontend"))
+if os.path.exists(frontend_path):
+    app.mount("/", StaticFiles(directory=frontend_path, html=True), name="frontend")
+else:
+    logger.error(f"Frontend directory not found at {frontend_path}")
