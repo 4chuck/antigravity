@@ -1,6 +1,6 @@
 import chromadb
+import google.generativeai as genai
 from chromadb.utils import embedding_functions
-from sentence_transformers import SentenceTransformer
 import os
 import logging
 
@@ -8,19 +8,27 @@ logger = logging.getLogger("rag_pipeline")
 
 class RAGPipeline:
     def __init__(self, collection_name="document_collection"):
-        # Initialize the embedding function
-        logger.info("Loading SentenceTransformer model 'all-MiniLM-L6-v2'...")
-        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2')
-        logger.info("Embedding model loaded.")
+        # Initialize the Google Gemini embedding function
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            logger.error("GEMINI_API_KEY not found in environment!")
+            raise ValueError("GEMINI_API_KEY is required for RAG pipeline.")
+            
+        logger.info("Initializing Google Gemini embedding function...")
+        self.embedding_function = embedding_functions.GoogleGenerativeAIEmbeddingFunction(
+            api_key=api_key,
+            task_type="RETRIEVAL_DOCUMENT"
+        )
         
         # Initialize ChromaDB client (persistent storage)
         db_path = os.path.abspath("./chroma_db")
         logger.info(f"Initializing ChromaDB at: {db_path}")
         self.client = chromadb.PersistentClient(path="./chroma_db")
         
-        # Create or get collection
+        # Create or get collection with the embedding function
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
+            embedding_function=self.embedding_function,
             metadata={"hnsw:space": "cosine"}
         )
         doc_count = self.collection.count()
@@ -33,13 +41,9 @@ class RAGPipeline:
         metadatas = [c["metadata"] for c in chunks]
         ids = [f"id_{i}" for i in range(len(chunks))]
         
-        logger.debug(f"Generating embeddings for {len(documents)} documents...")
-        embeddings = self.embedding_model.encode(documents).tolist()
-        logger.debug(f"Embeddings generated. Shape: {len(embeddings)}x{len(embeddings[0]) if embeddings else 0}")
-        
+        # Chroma handles embeddings automatically when embedding_function is provided to get_or_create_collection
         try:
             self.collection.add(
-                embeddings=embeddings,
                 documents=documents,
                 metadatas=metadatas,
                 ids=ids
@@ -57,11 +61,9 @@ class RAGPipeline:
         logger.info(f"Querying vector DB: '{query_text[:60]}' (n_results={n_results})")
         
         try:
-            query_embeddings = self.embedding_model.encode([query_text]).tolist()
-            logger.debug(f"Query embedding generated (dim={len(query_embeddings[0])})")
-            
+            # Chroma handles embeddings automatically
             results = self.collection.query(
-                query_embeddings=query_embeddings,
+                query_texts=[query_text],
                 n_results=n_results
             )
             
